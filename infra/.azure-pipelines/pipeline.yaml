@@ -1,0 +1,75 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - 'infra/*'
+    - 'airflow/*'
+pr:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+    - 'infra/*'
+    - 'airflow/*'
+stages:
+  - stage: Infra Terraform
+    jobs:
+    - job: Build
+      pool: # Pool which will e used to run the pipeline
+      workspace:
+        clean: all
+#      variables:
+#        Variables to set in your pipeline
+#        TF_VAR_backend_bucket_name = ""
+#        TF_VAR_project_id = ""
+#        TF_VAR_service_account = ""
+#        TF_VAR_cloud_composer_name = ""
+      steps:
+        - bash: make init
+          displayName: 'Terraform init'
+          workingDirectory: 'infra'
+          env:
+            TF_VAR_backend_bucket_name: $(TF_VAR_backend_bucket_name)
+            TF_VAR_project_id: $(TF_VAR_project_id)
+            TF_VAR_service_account: $(TF_VAR_service_account)
+            TF_VAR_cloud_composer_name: $(TF_VAR_cloud_composer_name)
+        - bash: make plan
+          displayName: 'Terraform plan'
+          workingDirectory: 'infra'
+          env:
+            TF_VAR_backend_bucket_name: $(TF_VAR_backend_bucket_name)
+            TF_VAR_project_id: $(TF_VAR_project_id)
+            TF_VAR_service_account: $(TF_VAR_service_account)
+            TF_VAR_cloud_composer_name: $(TF_VAR_cloud_composer_name)
+    - job: Deploy
+      pool: # Pool which will e used to run the pipeline
+      workspace:
+        clean: all
+#      variables:
+#        Variables to set in your pipeline
+#        TF_VAR_backend_bucket_name = ""
+#        TF_VAR_project_id = ""
+#        TF_VAR_service_account = ""
+#        TF_VAR_cloud_composer_name = ""
+      dependsOn: Build
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+      steps:
+          - bash: make init
+            displayName: 'Terraform init'
+            workingDirectory: 'infra'
+            env:
+              TF_VAR_backend_bucket_name: $(TF_VAR_backend_bucket_name)
+              TF_VAR_project_id: $(TF_VAR_project_id)
+              TF_VAR_service_account: $(TF_VAR_service_account)
+              TF_VAR_cloud_composer_name: $(TF_VAR_cloud_composer_name)
+          - bash: make apply
+            displayName: 'Terraform apply'
+            workingDirectory: 'infra'
+            env:
+              TF_VAR_backend_bucket_name: $(TF_VAR_backend_bucket_name)
+              TF_VAR_project_id: $(TF_VAR_project_id)
+              TF_VAR_service_account: $(TF_VAR_service_account)
+              TF_VAR_cloud_composer_name: $(TF_VAR_cloud_composer_name)
